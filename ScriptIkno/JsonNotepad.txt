@@ -1,0 +1,33 @@
+
+
+How to reformat JSON in Notepad++?
+
+For Notepad++ v.7.6 and above Plugins Admin... is available.
+
+Open Menu Plugins > Plugins Admin...
+
+Search JSON Viewer
+
+Check JSON Viewer in List
+
+Click on Install Button
+
+Restart Notepad++
+
+Select JSON text
+
+Go to Plugins > JSON Viewer > Format JSON ( Ctrl + Alt + Shift + M )
+
+We can install any Notepad++ supported plugins using Plugins Admin...
+
+Share
+Follow
+======================================
+<!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
+<dependency>
+    <groupId>com.googlecode.json-simple</groupId>
+    <artifactId>json-simple</artifactId>
+    <version>1.1.1</version>
+</dependency>
+
+

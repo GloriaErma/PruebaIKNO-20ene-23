@@ -1,0 +1,184 @@
+package com.ikno.microservicio.Services;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+public class ArchivoService {
+
+    public ResponseEntity<String> lectura(File archivo) {
+        System.out.println("**************GECS*************************");
+        try {
+            // return ResponseEntity.ok().body(image);
+            // return new ResponseEntity<>(archivo+"RTA: Hola Mundo desde una respuesta
+            // HTTP!", HttpStatus.OK);
+            return ResponseEntity.ok().body(archivo + "RTA: Hola Mundo desde una respuesta HTTP!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private String folder = "cargas//";
+    private static String folderSal = "salidas//";
+    private final Logger logg = LoggerFactory.getLogger(ArchivoService.class);
+
+    public String save(MultipartFile file) {
+        System.out.println("**************GECS** serv***********************");
+        if (!file.isEmpty()) {
+            try {
+                byte[] bytes = file.getBytes();
+                Path path = Paths.get(folder + file.getOriginalFilename()); // folder+file
+                Files.write(path, bytes);
+                logg.info("LOG:: Archivo guardado");
+                System.out.println("Archivo guardado:  " + folder + path.getFileName());
+                leerArchivo(folder + path.getFileName());
+
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        return "Archivo guardado correctamente";
+    }
+
+    public static void leerArchivo(String arch) {
+        File archivo = null;
+        FileReader fr = null;
+        BufferedReader br = null;
+        // fichero = new FileWriter("c:/prueba.txt");
+        FileWriter fichero = null;
+        PrintWriter pw = null;
+
+        try {
+            // Apertura del fichero y creacion de BufferedReader para poder
+            // hacer una lectura comoda (disponer del metodo readLine()).
+            // archivo = new File("cargas\\Fj.json");
+            archivo = new File(arch);
+            fr = new FileReader(archivo);
+            br = new BufferedReader(fr);
+            int cont = 0;
+            int tipo = 0;
+            String[] arrCampos = new String[7];
+            String linea;
+
+            while ((linea = br.readLine()) != null) {
+                cont++;
+                JSONObject jsonObj = new JSONObject(linea);
+                JSONArray arrObject = (JSONArray) jsonObj.get("documents");
+                for (int i = 0; i < arrObject.length(); i++) {
+                    if (tipo == 0) {
+                        Date toDAY = new Date();
+                        DateFormat hourdateFormat = new SimpleDateFormat("HH.mm.ss dd-MM-yyyy");
+                        String historial = hourdateFormat.format(toDAY);
+
+                        String archSalida = folderSal + (i + 1) + "-DEPOSIT SLIP-table" + historial + ".csv";
+
+                        fichero = new FileWriter(archSalida);
+                        pw = new PrintWriter(fichero);
+                        salida(0, arrCampos, pw);
+                        tipo = 1;
+                    }
+                    JSONObject objDoc = (JSONObject) arrObject.get(i);
+                    String docId = objDoc.get("docId").toString(); // OK
+                    JSONObject jsonTable = objDoc.getJSONObject("table");
+
+                    JSONArray jsonTableRows = jsonTable.getJSONArray("tableRows");
+
+                    // Obtiene elementos de array "Rows".
+                    for (int j = 0; j < jsonTableRows.length(); j++) {
+                        JSONObject objRows = (JSONObject) jsonTableRows.get(j);
+                        JSONArray jsonColumnFields = objRows.getJSONArray("columnFields");
+                        System.out.println("Rows: " + j + " * " + jsonColumnFields.getClass().getSimpleName());
+                        // Obtiene elementos de array "Column".
+                        for (int k = 0; k < jsonColumnFields.length(); k++) {
+                            JSONObject objColumn = (JSONObject) jsonColumnFields.get(k);
+                            switch (objColumn.get("key").toString()) {
+                                case "Date":
+                                    System.out.println("Column: " + k + " * " + objColumn.get("value"));
+                                    arrCampos[0] = (String) objColumn.get("value");
+                                    break;
+                                case "BT":
+                                    System.out.println("Column: " + k + " * " + objColumn.get("value"));
+                                    arrCampos[1] = (String) objColumn.get("value");
+                                    break;
+                                case "Prov":
+                                    System.out.println("Column: " + k + " * " + objColumn.get("value"));
+                                    arrCampos[2] = (String) objColumn.get("value");
+                                    break;
+                                case "Name":
+                                    System.out.println("Column: " + k + " * " + objColumn.get("value"));
+                                    arrCampos[3] = (String) objColumn.get("value");
+                                    break;
+                                case "Bank":
+                                    System.out.println("Column: " + k + " * " + objColumn.get("value"));
+                                    arrCampos[4] = (String) objColumn.get("value");
+                                    break;
+                                case "Check#":
+                                    System.out.println("Column: " + k + " * " + objColumn.get("value"));
+                                    arrCampos[5] = (String) objColumn.get("value");
+                                    break;
+                                case "Amount":
+                                    System.out.println("Column: " + k + " * " + objColumn.get("value"));
+                                    arrCampos[6] = (String) objColumn.get("value");
+                                    break;
+                                default:
+                                    System.out.println("Column: " + k + " * " + objColumn.get("value"));
+                                    break;
+                            }
+                        }
+                        salida(tipo, arrCampos, pw);
+                    }
+                    tipo = 0;
+                    if (null != fichero)
+                        fichero.close();
+                }
+            }
+            System.out.println(" *** FIN *** " + cont);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // En el finally cerramos el fichero, para asegurarnos
+            // que se cierra tanto si todo va bien como si salta
+            // una excepcion.
+            try {
+                if (null != fr) {
+                    fr.close();
+                }
+                // if (null != fichero)
+                // fichero.close();
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
+        }
+    }
+
+    public static void salida(int tipo, String[] arrCampos, PrintWriter pw) {
+        String linea = "";
+        try {
+            if (tipo == 0) {
+                pw.println("Date,\"BT\",\"Prov\",\"Name\",\"Bank\",\"Check\",\"Amount\" ");
+            } else {
+                for (int i = 0; i < arrCampos.length; i++) {
+                    linea = linea + "\"" + arrCampos[i] + "\"" + ",";
+                }
+                pw.println(linea);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

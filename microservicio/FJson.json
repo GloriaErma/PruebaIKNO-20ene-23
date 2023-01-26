@@ -1,0 +1,210 @@
+    {
+    "firstName": "Ram",
+    "lastName": "Sharma",
+    "age": 26
+    },
+
+    "phoneNumbers": [
+        {
+            "type": "home",
+            "phone-number": "212 888-2365"
+        }
+    ] 
+}
+========================================
+OK.....................
+{
+	"firstName": "Ram",
+	"lastName": "Sharma",
+	"age": 26,
+
+	"phoneNumbers": [{
+		"type": "home",
+		"phone-number": "212 888-2365"
+	}]
+}
+=============================================
+OK.....................
+{
+	"archivo": {
+		"firstName": "Ram",
+		"lastName": "Sharma",
+		"age": 26,
+		"phoneNumbers": [{
+			"type": "home",
+			"phone-number": "212 888-2365"
+		}]
+	}
+}
+
+===========================================
+{
+    "archivo": "FJ.json"
+}
+
+===============================
+{
+    "file": "@file.txt"
+}
+
+=========================
+{
+  "array": [
+    1,
+    2,
+    3
+  ],
+  "boolean": true,
+  "color": "gold",
+  "null": null,
+  "number": 123,
+  "object": {
+    "a": "b",
+    "c": "d"
+  },
+  "string": "Hello World"
+}
+
+=========================
+
+	@RequestMapping(value = "/upload", method = RequestMethod.POST)
+	public @ResponseBody String handleFileUpload(
+			@RequestParam("file") MultipartFile file,
+			HttpServletRequest request, HttpServletResponse response) {
+		if (!file.isEmpty()) {
+			String name = file.getOriginalFilename();
+			try {
+				byte[] bytes = file.getBytes();
+				BufferedOutputStream stream = new BufferedOutputStream(
+						new FileOutputStream(
+								new File(fileLocation + name)));
+				stream.write(bytes);
+				stream.close();
+
+				return fileDirection + name;
+			} catch (Exception e) {
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				return "Failed to upload " + name + " => " + e.getMessage();
+			}
+		} else {
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return "Empty file.";
+		}
+	}
+
+============================================================
+2023-01-21T11:33:07.007-05:00  INFO 26092 --- [nio-8080-exec-2] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+**************GECS** REST* cargar**********************
+Fj.json
+application/json
+Archivo
+144
+org.springframework.web.multipart.support.StandardMultipartHttpServletRequest$StandardMultipartFile@31391e37
+**************GECS** serv***********************
+2023-01-21T11:33:07.013-05:00  INFO 26092 --- [nio-8080-exec-2] c.i.m.Services.ArchivoService            : LOG:: Archivo guardado
+Archivo guardado:  cargas//Fj.json
+dentro de leerArchivo: cargas//Fj.json
+Linea {
+P0: [{]-{
+Linea   "firstName": "Ram",
+P0: [   ,  "Ram",]-
+Linea   "lastName": "Sharma",
+P0: [   "lastName": "Sharma",]- "lastName": "Sharma",
+Linea   "age": 26,
+P0: [   "age": 26,]-    "age": 26,
+Linea
+P0: []-
+Linea   "phoneNumbers": [{
+P0: [   "phoneNumbers": [{]-    "phoneNumbers": [{
+Linea           "type": "home",
+P0: [           "type": "home",]-               "type": "home",
+Linea           "phone-number": "212 888-2365"
+P0: [           "phone-number": "212 888-2365"]-                "phone-number": "212 888-2365"
+Linea   }]
+P0: [   }]]-    }]
+Linea }
+P0: [}]-}
+
+at java.base/java.lang.Thread.run(Thread.java:833)
+ *** FIN *** 1 linea...en...salidas//B103078_13.21.07 21-01-2023.json
+
+https://oa.upm.es/38731/1/TFG_Federico_Gutierrez_Faraoni.pdf
+
+https://chuwiki.chuidiang.org/index.php?title=Lectura_y_Escritura_de_Ficheros_en_Java#:~:text=Podemos%20abrir%20un%20fichero%20de,y%20extraer%20campos%20de%20ella.
+
+** InputStreamReader y BufferedReader   SCANNER
+https://chuwiki.chuidiang.org/index.php?title=Lectura_de_teclado_en_java#Ejemplo_de_lectura_de_un_fichero_con_Scanner
+
+
+
+
+Cómo cargar un archivo adjunto desde una solicitud de publicación de API REST
+Consejo: use datos de formulario multiparte en su código Java
+
+Foto por Drew Farwell en Desenchufe
+Después de horas y horas de búsqueda de una manera de descargar archivos adjuntos de una solicitud de API POST, Finalmente reuní fragmentos de diferentes Stack Overflow y publicaciones de blog para que funcionara.
+
+Esto no debería ser tan difícil. Y honestamente, no lo fue.
+
+Usé esto dentro de mi proyecto Spring, pero la lógica seguirá siendo la misma en otros tipos de proyectos Java.
+
+También le mostraré cómo probar el punto final usando Postman.
+
+Objetivo
+El objetivo es descargar un archivo adjunto enviado desde una solicitud de API POST.
+
+Si desea seguirlo, le sugiero que use las siguientes herramientas:
+
+Código visual de estudio, IntelliJ, o Eclipse para el editor de código / IDE
+Cartero
+Crea tu punto final REST
+Primero vamos a configurar nuestro punto final REST. Es un simple PostMapping que residirá en nuestro Controller.java clase.
+
+
+Hablemos de cada línea de esta clase.
+
+Línea 21: el tipo de retorno será un ResponseEntity. Esto puede ser cualquier cosa. Quería ver “ Good Job ” devuelto en una solicitud exitosa con un 200 código de estado.
+Línea 21 ( cont. ): @RequestPart(“file”) cuida el cuerpo de nuestros datos de formulario. “ file ” es la etiqueta que utilizamos para nuestro archivo al enviar la solicitud. Visualizará esto mientras realiza las pruebas con Postman.
+Línea 21 ( cont. ): MultipartFile es una representación de un archivo cargado recibido en una solicitud multiparte. Este es el tipo de datos que usaremos para nuestro archivo.
+Línea 22 – 23: si el archivo no se lee correctamente (, lo que significa que es null), deberíamos devolver un HttpStatus.BAD_REQUEST.
+Línea 25: vamos a envolver esto en un try-catch bloquear porque algunos métodos lanzarán un IOException. Esta es nuestra forma de manejar esas excepciones.
+Línea 26: esta línea es clave. Vamos a almacenar el contenido de nuestro archivo en una matriz de bytes. Para recuperar esos bytes del archivo original, usamos el getBytes() método.
+Línea 27: para encontrar nuestro archivo almacenado en la memoria o temporalmente en un disco, debemos especificar el nombre del archivo. los Path El objeto nos ayuda a lograr esto.
+Línea 28: A continuación, vamos a escribir el archivo en nuestra ubicación especificada. Puede almacenar esto donde quiera para uso futuro.
+Línea 29: solo una simple salida de consola para verificar que estamos leyendo el archivo correcto.
+Línea 30 – 32: estas líneas manejan el IOException en caso de que haya un problema con la E / S.
+Línea 33: Devolución “ Buen trabajo ” en una solicitud exitosa.
+Prueba usando cartero
+Ahora vamos a enviar un archivo adjunto a nuestro punto final.
+
+Esta solicitud será un POST solicitud enviada a localhost:8080/api, que es solo nuestro servidor local.
+
+Para adjuntar un archivo, debe incluirlo en el Cuerpo como datos de formulario.
+
+
+Una vez que esté en los campos de datos de formulario → del Cuerpo, debe ingresar un KEY. Este debe ser “ archivo ” o el valor que haya especificado en el @RequestPart(“[value]”).
+
+Después de hacerlo, aparecerá un menú desplegable que le da la opción de Texto o Archivo. Seleccione la opción “ file ”.
+
+Entonces solo presiona Enviar. A continuación se muestra cómo será toda la solicitud y respuesta.
+
+
+En el lado de Spring, verá el nombre de archivo impreso en nuestra consola de esta manera:
+
+
+Como puede ver en la última línea, el nombre de mi archivo era Getting started with OneDrive.docx .
+
+Y eso es todo. Es así de simple.
+
+Si tiene alguna pregunta, comentario o inquietud, no dude en dejar una respuesta.
+==========================================================
+Los metacaracteres son caracteres no alfabéticos que poseen un significado especial en las expresiones regulares. que son :
+
+\ , ^ , $ , . , | , ? , * , + , ( , ) , { , } , [
+
+=========================================================
+String string = "123-654321";
+String[] parts = string.split("-");
+String part1 = parts[0]; // 123
+String part2 = parts[1]; // 654321
+================================================================
